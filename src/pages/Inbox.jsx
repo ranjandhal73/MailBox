@@ -1,7 +1,10 @@
-import React, {useEffect, useState} from 'react'
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {receivedEmail, markEmailAsRead} from '../features/emailSlice'
+import { receivedEmail, markEmailAsRead } from '../features/emailSlice';
 import toast from 'react-hot-toast';
+import { FaTrashAlt } from "react-icons/fa";
+import useApi from '../hooks/useApi';
+
 
 function Inbox() {
   const [loader, setLoader] = useState(false);
@@ -11,44 +14,65 @@ function Inbox() {
   const dbUrl = import.meta.env.VITE_MAILBOX_DATABASE;
   const dispatch = useDispatch();
   const data = useSelector(state => state.email.received);
-  
+  const {onSend, onDelete} = useApi();
   const getData = async () =>{
     try {
       setLoader(true);
       const response = await fetch(`${dbUrl}/${userEmail}/inbox.json`);
       
-      if(!response.ok){
+      if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.message)
+        throw new Error(err.message);
       }
       
       const data = await response.json();
       const readStatuses = JSON.parse(localStorage.getItem('readEmails')) || {};
       const loadedRes = [];
       for (const key in data) {
-
         loadedRes.push({
           id: key,
           ...data[key],
           read: readStatuses[key] || false,
         });
       }
-      dispatch(receivedEmail([...loadedRes]))
+      dispatch(receivedEmail([...loadedRes]));
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error.message);
     } finally {
-      setLoader(false)
+      setLoader(false);
     }
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     getData();
-  },[])
+  }, [])
 
-  const handleEmail = (email) =>{
+  const handleEmail = (email) => {
     setSelectedEmail(email);
-    dispatch(markEmailAsRead(email.id))
+    dispatch(markEmailAsRead(email.id));
   }
+
+  const handleDelete = async (email) => {
+    //Disable the buton during the delete request
+    console.log(email);
+    setLoader(true);
+
+    //move to trash
+    try {
+      const sendData = {to:email.senderEmail,sub:email.subject, body: email.body}
+      await onSend(`${dbUrl}/${userEmail}/trash.json`, sendData)
+
+      //delete from Inbox
+      await onDelete(`${dbUrl}/${userEmail}/inbox/${email.id}.json`);
+    } catch (error) {
+      console.log(error);
+    } finally{
+      setLoader(false)
+      getData();
+    }
+
+  }
+
   return (
     <>
       <h2 className='text-center text-2xl font-bold italic'>Inbox</h2>
@@ -60,11 +84,19 @@ function Inbox() {
             <>
               {!selectedEmail && (
                 <ul>
-                  {data?.map((email)=>(
-                    <li onClick={()=>handleEmail(email)} key={email.id} className='cursor-pointer border-b p-2'>
-                      {!email.read && <span 
-                        className="mr-2 h-2 w-2 bg-blue-500 rounded-full inline-block"></span>}
-                      <span className='font-bold'>{email.senderEmail}</span> | {email.subject}
+                  {data?.map((email) => (
+                    <li
+                      key={email.id}
+                      className= {`cursor-pointer border-b p-2 flex items-center justify-between ${email?.read ? '' : 'font-bold'}`}
+                      onClick={() => handleEmail(email)}
+                    >
+                      <div className='flex items-center'>
+                        {!email.read && (
+                          <span className='mr-2 h-2 w-2 bg-blue-500 rounded-full inline-block'></span>
+                        )}
+                        <div>{email.senderEmail} | <span>{email.subject}</span></div>
+                      </div>
+                      <i onClick={() => handleDelete(email)} className='pr-2 text-red-700 cursor-pointer'><FaTrashAlt /></i>
                     </li>
                   ))}
                 </ul>
@@ -73,25 +105,25 @@ function Inbox() {
           )}
 
           {selectedEmail && (
-                <div>
-                  <button
-                    onClick={() => setSelectedEmail(null)}
-                    className="mb-4 text-blue-500"
-                  >
-                    Back to Inbox
-                  </button>
-                  <h3 className="text-xl font-bold">{selectedEmail.subject}</h3>
-                  <p className="text-gray-600">From: {selectedEmail.senderEmail}</p>
-                  <div
-                    className="mt-4"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
-                  />
-                </div>
-              )}
+            <div>
+              <button
+                onClick={() => setSelectedEmail(null)}
+                className="mb-4 text-blue-500"
+              >
+                Back to Inbox
+              </button>
+              <h3 className="text-xl font-bold">{selectedEmail.subject}</h3>
+              <p className="text-gray-600">From: {selectedEmail.senderEmail}</p>
+              <div
+                className="mt-4"
+                dangerouslySetInnerHTML={{ __html: selectedEmail.body }}
+              />
+            </div>
+          )}
         </div>
       </div>
     </>
-  )
+  );
 }
 
-export default Inbox
+export default Inbox;
