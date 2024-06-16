@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import {receivedEmail, sendEmail, unreadEmail} from '../features/emailSlice'
+import {receivedEmail, markEmailAsRead} from '../features/emailSlice'
+import toast from 'react-hot-toast';
 
 function Inbox() {
   const [loader, setLoader] = useState(false);
@@ -10,6 +11,7 @@ function Inbox() {
   const dbUrl = import.meta.env.VITE_MAILBOX_DATABASE;
   const dispatch = useDispatch();
   const data = useSelector(state => state.email.received);
+  
   const getData = async () =>{
     try {
       setLoader(true);
@@ -21,17 +23,21 @@ function Inbox() {
       }
       
       const data = await response.json();
+      const readStatuses = JSON.parse(localStorage.getItem('readEmails')) || {};
       const loadedRes = [];
       for (const key in data) {
+
         loadedRes.push({
           id: key,
           ...data[key],
-        })
+          read: readStatuses[key] || false,
+        });
       }
       dispatch(receivedEmail([...loadedRes]))
-      setLoader(false)
     } catch (error) {
-      console.log(error);
+      toast.error(error.message)
+    } finally {
+      setLoader(false)
     }
   }
 
@@ -41,6 +47,7 @@ function Inbox() {
 
   const handleEmail = (email) =>{
     setSelectedEmail(email);
+    dispatch(markEmailAsRead(email.id))
   }
   return (
     <>
@@ -55,6 +62,8 @@ function Inbox() {
                 <ul>
                   {data?.map((email)=>(
                     <li onClick={()=>handleEmail(email)} key={email.id} className='cursor-pointer border-b p-2'>
+                      {!email.read && <span 
+                        className="mr-2 h-2 w-2 bg-blue-500 rounded-full inline-block"></span>}
                       <span className='font-bold'>{email.senderEmail}</span> | {email.subject}
                     </li>
                   ))}
@@ -63,7 +72,7 @@ function Inbox() {
             </>
           )}
 
-{selectedEmail && (
+          {selectedEmail && (
                 <div>
                   <button
                     onClick={() => setSelectedEmail(null)}
