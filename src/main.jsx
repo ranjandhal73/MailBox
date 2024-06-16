@@ -8,12 +8,16 @@ import store from './store/store.js'
 import { Route, RouterProvider, createBrowserRouter, createRoutesFromElements } from 'react-router-dom'
 import Compose from './component/Mail/Compose.jsx'
 import UserProfile from './pages/UserProfile.jsx'
+import Inbox from './pages/Inbox.jsx'
+import SentBox from './pages/SentBox.jsx'
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />} > 
       <Route path='/compose' element={<Compose />} />
       <Route path='/user-profile' element={<UserProfile />} />
+      <Route path='/inbox' element={<Inbox />} />
+      <Route path='/sent' element={<SentBox />} />
     </Route>
   )
 )

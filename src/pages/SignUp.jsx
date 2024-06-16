@@ -58,7 +58,7 @@ function SignUp() {
                 toast.success('Login Successfully...');
                 dispatch(login(data.idToken));
                 localStorage.setItem('email', data.email);
-                navigate('/user-profile')
+                navigate('/inbox')
             } else {
                 toast.success('Account created successfully...');
                 const loginUserData = {

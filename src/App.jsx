@@ -15,9 +15,9 @@ function App() {
       {!isLoggedIn && <SignUp />}
 
       {isLoggedIn && (
-        <div className="flex">
+        <div className="flex ">
           <SideBar setIsComposeOpen={setIsComposeOpen} />
-          <div className={`flex-grow transition-all duration-300`}>
+          <div className={`flex-grow transition-all duration-300 `}>
             <Outlet />
           </div>
         </div>

@@ -58,7 +58,7 @@ function Compose() {
           theme="snow"
           value={body}
           onChange={setBody}
-          className="mt-1 p-2 h-60"
+          className="mt-1 p-2 h-80"
         />
       </div>
       <div className="flex justify-end mt-10">
