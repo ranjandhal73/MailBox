@@ -17,7 +17,6 @@ const useApi = () =>{
             }
             const data = await response.json()
             console.log(data);
-            toast.success('Email Sent Successfully')
         } catch (error) {
             console.log(error);
         }
