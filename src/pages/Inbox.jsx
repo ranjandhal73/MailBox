@@ -17,7 +17,6 @@ function Inbox() {
 
   const getData = async () => {
     try {
-      setLoader(true);
       const response = await fetch(`${dbUrl}/${userEmail}/inbox.json`);
       
       if (!response.ok) {
@@ -26,7 +25,7 @@ function Inbox() {
       }
       
       const data = await response.json();
-      const readStatuses = JSON.parse(localStorage.getItem('readSendEmails')) || {};
+      const readStatuses = JSON.parse(localStorage.getItem('readEmails')) || {};
       const loadedRes = [];
       for (const key in data) {
         loadedRes.push({
@@ -38,35 +37,37 @@ function Inbox() {
       dispatch(receivedEmail([...loadedRes]));
     } catch (error) {
       toast.error(error.message);
-    } finally {
-      setLoader(false);
     }
   };
 
   useEffect(() => {
     getData();
+
+    const interval = setInterval(()=>{
+      getData();
+    }, 2000);
+
+    return () => clearInterval(interval); // clears the interval when the component unmounts, ensuring no memory leaks or unwanted API calls.
   }, []);
 
   const handleEmail = (email) => {
     setSelectedEmail(email);
-    const readStatuses = JSON.parse(localStorage.getItem('readSendEmails')) || {}
+    const readStatuses = JSON.parse(localStorage.getItem('readEmails')) || {};
     readStatuses[email.id] = true;
-    localStorage.setItem('readSendEmails', JSON.stringify(readStatuses));
-    const updateEmails = data.map((e)=>e.id === email.id ? {...e, read:true} : e)
-    dispatch(receivedEmail(updateEmails));
+    localStorage.setItem('readEmails', JSON.stringify(readStatuses));
+    const updatedEmails = data.map((e) => e.id === email.id ? { ...e, read: true } : e);
+    dispatch(receivedEmail(updatedEmails));
   };
 
   const handleDelete = async (email) => {
-    // Disable the button during the delete request
     setLoader(true);
 
-    // Move to trash
     try {
-      const sendData = { to: email.senderEmail, sub: email.subject, body: email.body };
-      await onSend(`${dbUrl}/${userEmail}/trash.json`, sendData);
+      // const sendData = { to: email.senderEmail, sub: email.subject, body: email.body };
+      // await onSend(`${dbUrl}/${userEmail}/trash.json`, sendData);
 
-      // Delete from Inbox
       await onDelete(`${dbUrl}/${userEmail}/inbox/${email.id}.json`);
+      toast.success('Email Deleted Successfully!')
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -89,10 +90,9 @@ function Inbox() {
                   {data?.map((email) => (
                     <li
                       key={email.id}
-                      className={`cursor-pointer border-b p-2 flex items-center justify-between ${email?.read ? '' : 'font-bold'}`}
-                      onClick={() => handleEmail(email)}
+                      className={`border-b p-2 flex items-center justify-between ${email?.read ? '' : 'font-bold'}`}
                     >
-                      <div className='flex items-center'>
+                      <div className='flex items-center cursor-pointer' onClick={() => handleEmail(email)}>
                         {!email.read && (
                           <span className='mr-2 h-2 w-2 bg-blue-500 rounded-full inline-block'></span>
                         )}

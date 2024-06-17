@@ -36,7 +36,6 @@ const useApi = () =>{
             }
 
             const data = await response.json();
-            toast.success('Conversation moved to Trash')
         } catch (error) {
             console.log(error.message);
             toast.error(error.message);
